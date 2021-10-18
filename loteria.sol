@@ -70,7 +70,7 @@ contract loteria {
     }
 
     //Funcion para ver la cantidad de tokens tiene una wallet
-    function misTokens() public view returns(uint){
+    function MisTokens() public view returns(uint){
         return token.balanceOf(msg.sender);
     }
 
@@ -88,28 +88,77 @@ contract loteria {
     //Boletos generados 
     uint [] boletos_comprados;
     //eventos
-    event boleto_comprado(uint); //Evento cuando se compra un voleto
+    event boleto_comprado(uint,address); //Evento cuando se compra un voleto
     event boleto_ganador(uint);  //Evento del ganador
+    event tokens_devueltos(uint, address);
+
+    //funion para comprar boletos de loteria
+    function CompraBoletos(uint _boletos) public {
+        //Precio total de los boletos a compra
+        uint precio_total = _boletos * PrecioBoleto;
+        //Filtrado de los tokens a pagar
+        require(precio_total <= MisTokens(), "Necesitas comprar mas mas tokens");
+        //Transferencia de tokens al owner -> bote/premio
+        token.transferencia_loteria(msg.sender,owner, precio_total);
 
 
+        /*Lo que esto hace es tomar la marca de tiempo, block.timestamp, el msg.sener y un nonce
+        (numero que solo se utiliza una vez, para que no ejecutemos dos veces la misma funcion de hash con los mismos parametros)
+        en incremento.
+        Luego se utiliza keccack256 para convertir estas entradas a un hash aleatorio,
+        convertir ese hash a un uint y luego utiliamos %10000 para tomar los ultimos 4 digitos.
+        nos dara un valor aleatorio entre 0 - 9999.
 
+        */
+        for (uint i = 0; i< _boletos; i++){
+            uint random =uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, randNonce))) % 10000;
+            randNonce++;
+            //almacenamos los datos de los boletos.
+            idPersona_boletos[msg.sender].push(random);
+            boletos_comprados.push(random);
+            // asignacion del adn del boleto para tener un ganador
+            ADN_boleto[random] = msg.sender;
+            //Emision del evento
+            emit boleto_comprado(random,msg.sender);
 
+        }
 
+    }
+    //visualizar el num de boletos de una persona
+    function TusBoletos() public view returns(uint [] memory){
+        return idPersona_boletos[msg.sender];
+    }
+    //funcion para encontrar un ganador y entregable los tokens
+    function ganador() public UnicamenteFor(msg.sender){
+        //Debe haber boletos comprados para generar un ganador
+        require(boletos_comprados.length > 0, "No hay boletos comprados");
+        // Declaracion de la longitud del array
+        uint longitud = boletos_comprados.length;
+        //Aleatoriamente elijo un numero entre 0 - longitud
+        uint posicion_array = uint(uint(keccak256(abi.encodePacked(block.timestamp)))%longitud);
+        //seleccion del numero aleatorio mediante la posicion del array aleatorio
+        uint eleccion = boletos_comprados[posicion_array];
+        //emision del evento del ganador
+        emit boleto_ganador(eleccion);
+        //Recuperar la direccion del ganador
+        address direccion_ganador = ADN_boleto[eleccion];
+        token.transferencia_loteria(msg.sender, direccion_ganador, Bote());
 
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    //Devolucion de los tokens
+    function DevolverTokens(uint _numTokens) public payable {
+        //El numero de tokens a devolver debe ser mayor a 0
+        require (_numTokens > 0, "Necesitas devolver un numero positivo de tokens");
+        //el usuario/cliente debe tener los tokens que desea devolver
+        require(_numTokens <= MisTokens(), "No tiene los tokens que deseas devolver");
+        //Devolucion
+        //1. El cliente devuelva los tokens
+        //2. La loteria paga los tokens devueltos en ethers
+        msg.sender.transfer(PrecioTokens(_numTokens));
+        //Emision del evento
+        emit tokens_devueltos(_numTokens, msg.sender);
+    }
 
 
 
