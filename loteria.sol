@@ -24,7 +24,7 @@ contract loteria {
 
     // --------------------------------TOKEN----------------------------------------
     // Establacer el precio de los tokens en ethers
-    function precioTokens(uint _numTokens) internal pure returns (uint){
+    function PrecioTokens(uint _numTokens) internal pure returns (uint){
         return _numTokens*(1 ether);
     }
 
@@ -37,6 +37,49 @@ contract loteria {
         require (_direccion == owner, "No tienes permido para ejecutar esta funcion");
         _;
     }
+
+    // Comprar tokens para comprar boletos para la loteria
+    function CompraTokens(uint _numTokens) public payable {
+        //Calcular el coste de los tokens
+        uint coste = PrecioTokens(_numTokens);
+        //Se requiere que el valor de ethers pagados sea equivalente al coste.
+        require(msg.value >= coste, "Compra menos Tokens o paga con mas Ethers");
+        // me tienen que regresar el vuelto si pague con mas de lo debido.
+        uint returnValue= msg.value - coste;
+        //trasferencia de diferencia.
+        //msg.sender.transfer(returnValue);
+        //obtener el balance de toknes del cntrato
+        uint Balance = tokensDisponibles();
+        //filtro para evaluar los tokens a comparr con los tokens disponibles
+        require(_numTokens <= Balance, "Compra un numero de Tokens adecuado" ); 
+        //Transferencia de Tokens al comprador
+        token.transfer(msg.sender, _numTokens);
+    }
+
+    function tokensDisponibles() public returns(uint){
+        return token.balanceOf(contrato);
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }
