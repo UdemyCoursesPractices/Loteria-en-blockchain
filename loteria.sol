@@ -28,5 +28,15 @@ contract loteria {
         return _numTokens*(1 ether);
     }
 
+    //generar mas Tokens por la loteria.
+    function generaTokens(uint _num) public UnicamenteFor(msg.sender){
+        token.increaseTotalSupply(_num);
+    }
+    //Modifica las funciones para que solo sean ejecutables por el owner del contrato.
+    modifier UnicamenteFor(address _direccion) {
+        require (_direccion == owner, "No tienes permido para ejecutar esta funcion");
+        _;
+    }
+
 
 }
