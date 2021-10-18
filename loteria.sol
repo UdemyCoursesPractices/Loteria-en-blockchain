@@ -14,6 +14,8 @@ contract loteria {
     // Numero de tokens a crear
     uint public tokens_Creados = 10000;
 
+    event ComprandoTokens(uint, address);
+
     constructor () public {
         token = new ERC20Basic(tokens_Creados);
         owner = msg.sender;
@@ -54,6 +56,8 @@ contract loteria {
         require(_numTokens <= Balance, "Compra un numero de Tokens adecuado" ); 
         //Transferencia de Tokens al comprador
         token.transfer(msg.sender, _numTokens);
+        //emitir la compra
+        emit ComprandoTokens(_numTokens, msg.sender);
     }
 
     function tokensDisponibles() public returns(uint){
@@ -64,7 +68,29 @@ contract loteria {
     function Bote() public view returns (uint) {
         return token.balanceOf(owner);
     }
-    
+
+    //Funcion para ver la cantidad de tokens tiene una wallet
+    function misTokens() public view returns(uint){
+        return token.balanceOf(msg.sender);
+    }
+
+
+    // ---------------------------LOTERIA-----------------------------------
+
+    //Precio del boleto.
+    uint public PrecioBoleto = 5;
+    //Relacion entre la persona que compra los boletos y los numeros del boleto.
+    mapping (address => uint []) idPersona_boletos;
+    // Relacion necesario para identificar al ganador.
+    mapping (uint => address) ADN_boleto;
+    //Numero aleatorio, para generar voletos.
+    uint randNonce = 0;
+    //Boletos generados 
+    uint [] boletos_comprados;
+    //eventos
+    event boleto_comprado(uint); //Evento cuando se compra un voleto
+    event boleto_ganador(uint);  //Evento del ganador
+
 
 
 
